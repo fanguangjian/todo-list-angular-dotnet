@@ -11,3 +11,8 @@ Simple full-stack TODO list application built with Angular and .NET Web API
 <!-- intital ng -->
 npx @angular/cli@21 new todo-app --routing --style=scss
 
+<!-- intital dotnet -->
+dotnet new webapi -n todo-service-api --use-controllers
+<!-- run dotnet -->
+dotnet run --project todo-service-api
+
