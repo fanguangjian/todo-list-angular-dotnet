@@ -1,0 +1,396 @@
+<mat-card appearance="outlined" class="todo-card">
+  @if (session.currentUser()) {
+    <mat-card-header class="todo-header">
+      <div class="todo-header-main">
+        <mat-card-title>Job Board</mat-card-title>
+        <mat-card-subtitle>
+          {{ session.currentUser()?.name }} <span class="role-tag">Technician</span>
+        </mat-card-subtitle>
+      </div>
+      @if (items().length) {
+        <div class="todo-header-stats">
+          <span class="stat-pill"><strong>{{ remaining() }}</strong> open</span>
+          @if (hasCompleted()) {
+            <span class="stat-pill subtle">
+              <strong>{{ items().length - remaining() }}</strong> closed
+            </span>
+          }
+        </div>
+      }
+    </mat-card-header>
+  }
+
+  <mat-card-content>
+    @if (session.loading()) {
+      <div class="todo-loading">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Loading…</span>
+      </div>
+    } @else if (!session.currentUser()) {
+      <div class="welcome">
+        <div class="welcome-art">
+          <mat-icon>engineering</mat-icon>
+        </div>
+        <h2 class="welcome-title">
+          @if (session.users().length) {
+            Choose a technician
+          } @else {
+            Welcome to Field Jobs
+          }
+        </h2>
+        <p class="welcome-hint">
+          @if (session.users().length) {
+            Pick someone from the crew, or add a new technician below.
+          } @else {
+            Add your first technician to start logging restoration, plumbing, electrical, HVAC, roofing and fire-safety jobs.
+          }
+        </p>
+
+        @if (session.users().length) {
+          <mat-form-field appearance="fill" class="welcome-select">
+            <mat-label>Existing crew</mat-label>
+            <mat-icon matPrefix>group</mat-icon>
+            <mat-select
+              [compareWith]="compareUsers"
+              [ngModel]="session.currentUser()"
+              name="existingUser"
+              (ngModelChange)="onUserChange($event)"
+            >
+              @for (user of session.users(); track user.id) {
+                <mat-option [value]="user">
+                  {{ user.name }} <small>({{ user.email }})</small>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="welcome-divider">
+            <span>or add a new one</span>
+          </div>
+        }
+
+        <form class="welcome-form" (ngSubmit)="createUser()">
+          <mat-form-field appearance="fill" subscriptSizing="dynamic">
+            <mat-label>Name</mat-label>
+            <input
+              matInput
+              name="newUserName"
+              autocomplete="name"
+              placeholder="e.g. Jamie Carter"
+              [(ngModel)]="newUserName"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="fill" subscriptSizing="dynamic">
+            <mat-label>Email</mat-label>
+            <input
+              matInput
+              type="email"
+              name="newUserEmail"
+              autocomplete="email"
+              placeholder="jamie@example.com"
+              [(ngModel)]="newUserEmail"
+            />
+          </mat-form-field>
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="welcome-submit"
+            [disabled]="!newUserName().trim() || !newUserEmail().trim() || creatingUser()"
+          >
+            <mat-icon>arrow_forward</mat-icon>
+            Add technician
+          </button>
+        </form>
+      </div>
+    } @else {
+      <div class="todo-user-row">
+        <mat-form-field appearance="fill" class="user-select" subscriptSizing="dynamic">
+          <mat-label>Technician</mat-label>
+          <mat-icon matPrefix>engineering</mat-icon>
+          <mat-select
+            [compareWith]="compareUsers"
+            [ngModel]="session.currentUser()"
+            (ngModelChange)="onUserChange($event)"
+          >
+            @for (user of session.users(); track user.id) {
+              <mat-option [value]="user">
+                {{ user.name }} <small>({{ user.email }})</small>
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button mat-icon-button matTooltip="Refresh" (click)="refresh()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+
+      <form class="todo-form" (ngSubmit)="add()">
+        <div class="todo-form-row primary">
+          <mat-form-field appearance="fill" class="todo-input" subscriptSizing="dynamic">
+            <mat-label>Log a new job</mat-label>
+            <input
+              matInput
+              name="title"
+              autocomplete="off"
+              [(ngModel)]="draft"
+              placeholder="e.g. Smith residence — burst pipe replacement"
+            />
+            <mat-icon matSuffix>build</mat-icon>
+          </mat-form-field>
+
+          <button
+            mat-stroked-button
+            type="button"
+            class="reset-btn"
+            matTooltip="Clear the form"
+            [disabled]="isFormPristine() || submitting()"
+            (click)="resetForm()"
+          >
+            <mat-icon>refresh</mat-icon>
+            Reset
+          </button>
+
+          <button
+            mat-flat-button
+            color="primary"
+            type="submit"
+            class="add-btn"
+            [disabled]="!draft().trim() || submitting()"
+          >
+            <mat-icon>add</mat-icon>
+            Log job
+          </button>
+        </div>
+
+        <div class="todo-form-row meta">
+          <mat-form-field appearance="fill" class="todo-due" subscriptSizing="dynamic">
+            <mat-label>Scheduled date</mat-label>
+            <input
+              matInput
+              name="dueDate"
+              [matDatepicker]="duePicker"
+              [min]="minDate"
+              [(ngModel)]="draftDue"
+              (click)="duePicker.open()"
+              readonly
+            />
+            <mat-datepicker-toggle matSuffix [for]="duePicker"></mat-datepicker-toggle>
+            <mat-datepicker #duePicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="todo-time" subscriptSizing="dynamic">
+            <mat-label>Time</mat-label>
+            <mat-icon matPrefix>schedule</mat-icon>
+            <mat-select
+              name="dueTime"
+              [(ngModel)]="draftTime"
+              [disabled]="!draftDue()"
+              panelClass="todo-time-panel"
+            >
+              <mat-option [value]="''">— —</mat-option>
+              @for (opt of timeOptions; track opt.value) {
+                <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="todo-priority" subscriptSizing="dynamic">
+            <mat-label>Priority</mat-label>
+            <mat-icon matPrefix>flag</mat-icon>
+            <mat-select
+              name="priorityId"
+              [(ngModel)]="draftPriorityId"
+              panelClass="todo-tag-panel"
+            >
+              <mat-option [value]="''">— —</mat-option>
+              @for (tag of tagSession.priorityTags(); track tag.id) {
+                <mat-option [value]="tag.id">
+                  <span class="tag-dot" [style.background]="tag.color || '#9aa0a6'"></span>
+                  {{ tag.name }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill" class="todo-trade" subscriptSizing="dynamic">
+            <mat-label>Trade</mat-label>
+            <mat-icon matPrefix>handyman</mat-icon>
+            <mat-select
+              name="tradeIds"
+              multiple
+              [(ngModel)]="draftTradeIds"
+              panelClass="todo-tag-panel"
+            >
+              @for (tag of tagSession.tradeTags(); track tag.id) {
+                <mat-option [value]="tag.id">
+                  <span class="tag-dot" [style.background]="tag.color || '#9aa0a6'"></span>
+                  {{ tag.name }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </form>
+
+      <nav class="todo-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.active]="filter() === 'all'"
+          [attr.aria-selected]="filter() === 'all'"
+          (click)="setFilter('all')"
+        >
+          All <span class="tab-count">{{ items().length }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.active]="filter() === 'active'"
+          [attr.aria-selected]="filter() === 'active'"
+          (click)="setFilter('active')"
+        >
+          Active <span class="tab-count">{{ remaining() }}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.active]="filter() === 'completed'"
+          [attr.aria-selected]="filter() === 'completed'"
+          (click)="setFilter('completed')"
+        >
+          Completed <span class="tab-count">{{ items().length - remaining() }}</span>
+        </button>
+        <span class="spacer"></span>
+        <button
+          type="button"
+          mat-button
+          class="sort-btn"
+          matTooltip="Sort by scheduled date"
+          [matMenuTriggerFor]="sortMenu"
+        >
+          <mat-icon>swap_vert</mat-icon>
+          <span class="sort-label">
+            {{ sortDir() === 'soonest' ? 'Soonest first' : 'Latest first' }}
+          </span>
+          <mat-icon class="sort-chevron">arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #sortMenu="matMenu">
+          <button mat-menu-item (click)="setSortDir('soonest')">
+            <mat-icon>arrow_upward</mat-icon>
+            <span>Soonest first</span>
+          </button>
+          <button mat-menu-item (click)="setSortDir('latest')">
+            <mat-icon>arrow_downward</mat-icon>
+            <span>Latest first</span>
+          </button>
+        </mat-menu>
+        @if (hasCompleted()) {
+          <button mat-button class="clear-btn" (click)="clearCompleted()">
+            Clear
+          </button>
+        }
+      </nav>
+
+      @if (loading()) {
+        <div class="todo-loading">
+          <mat-spinner diameter="32"></mat-spinner>
+          <span>Loading todos…</span>
+        </div>
+      } @else if (sections().length === 0) {
+        <div class="todo-empty">
+          <mat-icon>inbox</mat-icon>
+          <p>
+            @switch (filter()) {
+              @case ('active') { No open jobs — everything's wrapped up. }
+              @case ('completed') { No closed jobs yet. }
+              @default { No jobs on the board yet — log the first one above. }
+            }
+          </p>
+        </div>
+      } @else {
+        <div class="todo-sections">
+          @for (sec of sections(); track sectionTrack($index, sec)) {
+            @if (sec.kind === 'header') {
+              <div
+                class="section-header"
+                [class.in-progress]="sec.status === 'in-progress'"
+                [class.is-completed]="sec.status === 'completed'"
+              >
+                <span class="section-title">{{ sec.label }}</span>
+              </div>
+            } @else {
+              <div
+                class="todo-row"
+                [class.done]="sec.item.isCompleted"
+                [style.--row-color]="itemColor(sec.item)"
+              >
+                <span class="row-marker" aria-hidden="true">
+                  @if (sec.item.isCompleted) {
+                    <mat-icon class="done-mark">check_circle</mat-icon>
+                  }
+                </span>
+
+                <div class="row-body">
+                  <span class="row-title">{{ sec.item.title }}</span>
+                  @if (sec.item.tags?.length) {
+                    <span class="row-tags">
+                      @for (tag of sec.item.tags ?? []; track tag.id) {
+                        <span
+                          class="tag-chip"
+                          [style.color]="tag.color || '#5f6368'"
+                          [style.borderColor]="tag.color || '#cfd2d6'"
+                        >
+                          {{ tag.name }}
+                        </span>
+                      }
+                    </span>
+                  }
+                </div>
+
+                <span class="row-date" [class.overdue]="sec.item.dueStatus === 1 && !sec.item.isCompleted">
+                  @if (sec.item.dueDate) {
+                    <span class="row-date-day">{{ sec.item.dueDate | date: 'yyyy/MM/dd' }}</span>
+                    @if (hasTime(sec.item.dueDate)) {
+                      <span class="row-date-time">{{ sec.item.dueDate | date: 'h:mm a' }}</span>
+                    }
+                  }
+                </span>
+
+                <button
+                  mat-icon-button
+                  class="row-menu"
+                  aria-label="Job actions"
+                  matTooltip="Actions"
+                  [matMenuTriggerFor]="jobMenu"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #jobMenu="matMenu">
+                  @if (sec.item.isCompleted) {
+                    <button mat-menu-item (click)="toggle(sec.item)">
+                      <mat-icon>undo</mat-icon>
+                      <span>Reopen job</span>
+                    </button>
+                  } @else {
+                    <button mat-menu-item (click)="toggle(sec.item)">
+                      <mat-icon>task_alt</mat-icon>
+                      <span>Mark complete</span>
+                    </button>
+                  }
+                  <button mat-menu-item class="danger" (click)="remove(sec.item)">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete job</span>
+                  </button>
+                </mat-menu>
+              </div>
+            }
+          }
+        </div>
+      }
+    }
+  </mat-card-content>
+</mat-card>
