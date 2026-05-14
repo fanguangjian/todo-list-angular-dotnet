@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using todo_service_api.DTOs;
+using todo_service_api.Tests.Helpers;
 
 namespace todo_service_api.Tests;
 
@@ -14,9 +15,7 @@ public class UsersControllerTests : IClassFixture<TodoApiFactory>
     [Fact]
     public async Task GetAll_ReturnsEmptyList_WhenNoUsers()
     {
-        var response = await _client.GetAsync("/api/users");
-        response.EnsureSuccessStatusCode();
-        var users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
+        var users = await _client.GetDataAsync<List<UserDto>>("/api/users");
         Assert.NotNull(users);
         Assert.Empty(users);
     }
@@ -27,7 +26,7 @@ public class UsersControllerTests : IClassFixture<TodoApiFactory>
         var dto = new CreateUserDto("Alice", "alice@example.com");
         var response = await _client.PostAsJsonAsync("/api/users", dto);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var user = await response.Content.ReadFromJsonAsync<UserDto>();
+        var user = await response.ReadDataAsync<UserDto>();
         Assert.NotNull(user);
         Assert.Equal("Alice", user.Name);
         Assert.Equal("alice@example.com", user.Email);
@@ -46,9 +45,7 @@ public class UsersControllerTests : IClassFixture<TodoApiFactory>
     public async Task GetById_ReturnsUser_WhenExists()
     {
         var created = await CreateUser("Carol", "carol@example.com");
-        var response = await _client.GetAsync($"/api/users/{created.Id}");
-        response.EnsureSuccessStatusCode();
-        var user = await response.Content.ReadFromJsonAsync<UserDto>();
+        var user = await _client.GetDataAsync<UserDto>($"/api/users/{created.Id}");
         Assert.Equal(created.Id, user!.Id);
     }
 
@@ -72,6 +69,6 @@ public class UsersControllerTests : IClassFixture<TodoApiFactory>
     private async Task<UserDto> CreateUser(string name, string email)
     {
         var response = await _client.PostAsJsonAsync("/api/users", new CreateUserDto(name, email));
-        return (await response.Content.ReadFromJsonAsync<UserDto>())!;
+        return (await response.ReadDataAsync<UserDto>())!;
     }
 }

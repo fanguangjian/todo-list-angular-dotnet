@@ -1,5 +1,6 @@
 using todo_service_api.Data;
 using todo_service_api.Filters;
+using todo_service_api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,8 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+    options.Filters.Add<ApiResponseFilter>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -37,6 +39,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Global exception handler — must be first so it wraps the entire pipeline
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors();        // Must be placed before UseAuthorization
 app.UseAuthorization();
