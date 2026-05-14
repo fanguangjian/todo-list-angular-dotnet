@@ -51,8 +51,15 @@ todo-list-angular-dotnet/
         │   ├── UserDto.cs             # UserDto / CreateUserDto
         │   ├── TagDto.cs              # TagDto / CreateTagDto
         │   └── TodoDto.cs             # TodoItemDto / CreateTodoDto / UpdateTodoDto
+        ├── Common/
+        │   └── ApiResponse.cs         # Unified response wrapper: { status, message, data }
         ├── Data/
         │   └── DataStore.cs           # In-memory store, registered as Singleton
+        ├── Filters/
+        │   ├── ApiResponseFilter.cs   # Global result filter — wraps all responses automatically
+        │   └── TagOrderFilter.cs      # Swagger document filter — sets tag order: Users → Tags → Todos
+        ├── Middleware/
+        │   └── ExceptionHandlingMiddleware.cs  # Global exception handler — returns consistent JSON errors
         ├── Controllers/
         │   ├── UsersController.cs     # GET / POST / DELETE  /api/users
         │   ├── TagsController.cs      # GET / POST / DELETE  /api/users/{userId}/tags
@@ -62,7 +69,57 @@ todo-list-angular-dotnet/
         ├── Program.cs
         ├── appsettings.json
         └── todo-service-api.csproj
+
+    todo-service-api.Tests/            # Integration tests (WebApplicationFactory)
+        ├── Helpers/
+        │   └── HttpClientExtensions.cs  # ReadDataAsync<T> — unwraps ApiResponse envelope
+        ├── TodoApiFactory.cs            # Test server setup with fresh DataStore per run
+        ├── UsersControllerTests.cs      # 6 tests
+        ├── TagsControllerTests.cs       # 4 tests
+        └── TodosControllerTests.cs      # 8 tests
 ```
+
+### Run Tests
+```bash
+cd backend
+dotnet test todo-service-api.Tests
+```
+
+18 integration tests covering Users, Tags, and Todos controllers.
+
+---
+
+## API Response Format
+
+All endpoints return a unified envelope:
+
+```json
+{
+  "status": 200,
+  "message": "Success",
+  "data": { }
+}
+```
+
+On error:
+
+```json
+{
+  "status": 404,
+  "message": "An unexpected error occurred.",
+  "data": null,
+  "path": "/api/users/xxx/todos"
+}
+```
+
+| Exception | Status |
+|-----------|--------|
+| `ArgumentException` | 400 Bad Request |
+| `KeyNotFoundException` | 404 Not Found |
+| `InvalidOperationException` | 409 Conflict |
+| Other | 500 Internal Server Error |
+
+---
 
 ## API Endpoints
 
