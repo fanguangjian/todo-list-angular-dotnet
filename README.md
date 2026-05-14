@@ -198,3 +198,16 @@ On error:
 | PUT | `/api/users/{userId}/todos/{id}` | Update a todo |
 | PATCH | `/api/users/{userId}/todos/{id}/complete` | Toggle completed status |
 | DELETE | `/api/users/{userId}/todos/{id}` | Delete a todo |
+
+<img width="1082" height="904" alt="image" src="https://github.com/user-attachments/assets/5e2dd14a-a4a8-4968-87ca-73dba9420fdb" />
+
+
+
+---
+
+## Final Demo
+<img width="1059" height="557" alt="image" src="https://github.com/user-attachments/assets/bd6192b3-4a4f-4b98-b781-df5c5190702b" />
+<img width="957" height="803" alt="image" src="https://github.com/user-attachments/assets/cf40e6d5-42c4-43a9-8428-e741c85a275a" />
+
+
+
