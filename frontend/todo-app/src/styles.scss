@@ -4,8 +4,7 @@ html {
   color-scheme: light;
   @include mat.theme((
     color: (
-      primary: mat.$blue-palette,
-      tertiary: mat.$orange-palette,
+      primary: mat.$orange-palette,
     ),
     typography: Roboto,
     density: 0,
@@ -16,6 +15,7 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background: #f5f6f8;
+  background: linear-gradient(160deg, #FDF6EE 0%, #F5EDE0 60%, #EFE5D4 100%);
+  background-attachment: fixed;
   color: var(--mat-sys-on-surface);
 }

@@ -3,9 +3,21 @@
     <mat-card-header class="todo-header">
       <div class="todo-header-main">
         <mat-card-title>Job Board</mat-card-title>
-        <mat-card-subtitle>
-          {{ session.currentUser()?.name }} <span class="role-tag">Technician</span>
-        </mat-card-subtitle>
+        <div class="header-user-row">
+          <button mat-button class="header-user-btn" [matMenuTriggerFor]="userMenu">
+            {{ session.currentUser()?.name }}
+            <mat-icon class="header-user-chevron">arrow_drop_down</mat-icon>
+          </button>
+          <span class="role-tag">Technician</span>
+        </div>
+        <mat-menu #userMenu="matMenu">
+          @for (user of session.users(); track user.id) {
+            <button mat-menu-item (click)="onUserChange(user)">
+              <mat-icon>person</mat-icon>
+              <span>{{ user.name }} <small>({{ user.email }})</small></span>
+            </button>
+          }
+        </mat-menu>
       </div>
       @if (items().length) {
         <div class="todo-header-stats">
@@ -89,14 +101,22 @@
               autocomplete="email"
               placeholder="jamie@example.com"
               [(ngModel)]="newUserEmail"
+              #emailField="ngModel"
+              email
+              required
             />
+            @if (emailField.touched && emailField.errors?.['required']) {
+              <mat-error>Email is required</mat-error>
+            } @else if (emailField.touched && emailField.errors?.['email']) {
+              <mat-error>Please enter a valid email address</mat-error>
+            }
           </mat-form-field>
           <button
             mat-flat-button
             color="primary"
             type="submit"
             class="welcome-submit"
-            [disabled]="!newUserName().trim() || !newUserEmail().trim() || creatingUser()"
+            [disabled]="!newUserName().trim() || emailField.invalid || creatingUser()"
           >
             <mat-icon>arrow_forward</mat-icon>
             Add technician
@@ -104,27 +124,6 @@
         </form>
       </div>
     } @else {
-      <div class="todo-user-row">
-        <mat-form-field appearance="fill" class="user-select" subscriptSizing="dynamic">
-          <mat-label>Technician</mat-label>
-          <mat-icon matPrefix>engineering</mat-icon>
-          <mat-select
-            [compareWith]="compareUsers"
-            [ngModel]="session.currentUser()"
-            (ngModelChange)="onUserChange($event)"
-          >
-            @for (user of session.users(); track user.id) {
-              <mat-option [value]="user">
-                {{ user.name }} <small>({{ user.email }})</small>
-              </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <button mat-icon-button matTooltip="Refresh" (click)="refresh()">
-          <mat-icon>refresh</mat-icon>
-        </button>
-      </div>
-
       <form class="todo-form" (ngSubmit)="add()">
         <div class="todo-form-row primary">
           <mat-form-field appearance="fill" class="todo-input" subscriptSizing="dynamic">
@@ -331,6 +330,8 @@
                 <span class="row-marker" aria-hidden="true">
                   @if (sec.item.isCompleted) {
                     <mat-icon class="done-mark">check_circle</mat-icon>
+                  } @else {
+                    <span class="row-dot"></span>
                   }
                 </span>
 
@@ -360,32 +361,35 @@
                   }
                 </span>
 
-                <button
-                  mat-icon-button
-                  class="row-menu"
-                  aria-label="Job actions"
-                  matTooltip="Actions"
-                  [matMenuTriggerFor]="jobMenu"
-                >
-                  <mat-icon>more_vert</mat-icon>
-                </button>
-                <mat-menu #jobMenu="matMenu">
+                <div class="row-actions">
                   @if (sec.item.isCompleted) {
-                    <button mat-menu-item (click)="toggle(sec.item)">
+                    <button mat-stroked-button class="action-reopen" (click)="toggle(sec.item)">
                       <mat-icon>undo</mat-icon>
-                      <span>Reopen job</span>
+                      Reopen
                     </button>
                   } @else {
-                    <button mat-menu-item (click)="toggle(sec.item)">
+                    <button mat-stroked-button class="action-complete" (click)="toggle(sec.item)">
                       <mat-icon>task_alt</mat-icon>
-                      <span>Mark complete</span>
+                      Complete
                     </button>
                   }
-                  <button mat-menu-item class="danger" (click)="remove(sec.item)">
-                    <mat-icon>delete</mat-icon>
-                    <span>Delete job</span>
-                  </button>
-                </mat-menu>
+                  @if (pendingDeleteId() === sec.item.id) {
+                    <span class="action-confirm">
+                      Sure?
+                      <button mat-stroked-button class="action-confirm-yes" (click)="remove(sec.item)">
+                        <mat-icon>check</mat-icon>
+                      </button>
+                      <button mat-stroked-button class="action-confirm-no" (click)="cancelDelete()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </span>
+                  } @else {
+                    <button mat-stroked-button class="action-delete" (click)="pendingDeleteId.set(sec.item.id)">
+                      <mat-icon>delete</mat-icon>
+                      Delete
+                    </button>
+                  }
+                </div>
               </div>
             }
           }

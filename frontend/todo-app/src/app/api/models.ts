@@ -1,3 +1,9 @@
+export interface ApiResponse<T> {
+  status: number;
+  message: string;
+  data: T;
+}
+
 export enum DueStatus {
   NoDueDate = 0,
   Overdue = 1,
