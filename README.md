@@ -207,7 +207,8 @@ On error:
 
 ## Final Demo
 <img width="1059" height="557" alt="image" src="https://github.com/user-attachments/assets/bd6192b3-4a4f-4b98-b781-df5c5190702b" />
-<img width="957" height="803" alt="image" src="https://github.com/user-attachments/assets/cf40e6d5-42c4-43a9-8428-e741c85a275a" />
+<img width="1054" height="814" alt="image" src="https://github.com/user-attachments/assets/40691bd4-f71d-461e-bc2a-7f2aa96aa760" />
+
 
 
 
