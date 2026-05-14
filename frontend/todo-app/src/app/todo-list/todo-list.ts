@@ -83,6 +83,7 @@ export class TodoList implements OnInit {
   protected readonly items = signal<TodoItemDto[]>([]);
   protected readonly loading = signal(false);
   protected readonly submitting = signal(false);
+  protected readonly pendingDeleteId = signal<string | null>(null);
 
   protected readonly newUserName = signal('');
   protected readonly newUserEmail = signal('');
@@ -276,9 +277,8 @@ export class TodoList implements OnInit {
 
   protected async remove(item: TodoItemDto): Promise<void> {
     const user = this.session.currentUser();
-    if (!user) {
-      return;
-    }
+    if (!user) return;
+    this.pendingDeleteId.set(null);
     try {
       await firstValueFrom(this.todoApi.delete(user.id, item.id));
       this.items.update((list) => list.filter((i) => i.id !== item.id));
@@ -286,6 +286,10 @@ export class TodoList implements OnInit {
     } catch (err) {
       this.toast('Failed to delete todo.');
     }
+  }
+
+  protected cancelDelete(): void {
+    this.pendingDeleteId.set(null);
   }
 
   protected async clearCompleted(): Promise<void> {

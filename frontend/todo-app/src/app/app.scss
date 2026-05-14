@@ -5,16 +5,18 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: linear-gradient(135deg, #1a365d 0%, #2b4f7e 100%);
+  background: linear-gradient(135deg, #1E1008 0%, #3A2010 100%);
   color: #fff;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.28);
 
   .brand-icon {
-    background: rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
+    background: linear-gradient(135deg, #C07830, #E89030);
+    border-radius: 10px;
     padding: 6px;
     width: 36px;
     height: 36px;
     font-size: 24px;
+    box-shadow: 0 2px 8px rgba(200, 120, 40, 0.4);
   }
 
   .app-brand {
@@ -24,15 +26,15 @@
   }
 
   .app-title {
-    font-weight: 600;
-    font-size: 18px;
-    letter-spacing: 0.02em;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.01em;
   }
 
   .app-tagline {
     font-size: 11px;
-    opacity: 0.75;
-    letter-spacing: 0.03em;
+    opacity: 0.55;
+    letter-spacing: 0.02em;
   }
 
   .spacer {
@@ -57,12 +59,7 @@
       padding: 4px;
     }
 
-    .app-title {
-      font-size: 16px;
-    }
-
-    .app-tagline {
-      display: none;
-    }
+    .app-title { font-size: 16px; }
+    .app-tagline { display: none; }
   }
 }
